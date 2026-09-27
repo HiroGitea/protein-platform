@@ -27,14 +27,37 @@ def test_engine_not_ready_fails_job_not_request(client):
     assert r.status_code == 200
     job = _wait(client, r.json()["job_id"])
     assert job["status"] == "failed"
-    assert "未就绪" in job["error"] or "尚未实现" in job["error"]
+    assert "无可用 provider" in job["error"]
 
 
-def test_planned_engine_says_not_implemented(client):
+def test_error_names_every_provider_that_failed(client):
+    """错误信息要同时说明 local 和 remote 各自为什么不能用。"""
     r = client.post("/api/fold/predict", json={"sequence": "MKTAYIAKQRQISFVKSHFS"})
     job = _wait(client, r.json()["job_id"])
     assert job["status"] == "failed"
-    assert "尚未实现" in job["error"]
+    assert "local:" in job["error"] and "remote:" in job["error"]
+
+
+def test_all_tool_endpoints_accept_submissions(client):
+    """五个工具的提交入口都要在，且返回 job_id。"""
+    submissions = [
+        ("/api/genmol/generate", {"num_samples": 3}),
+        ("/api/molmim/optimize", {"smiles": "CCO"}),
+        ("/api/mmseqs/search", {"sequence": "MKTAYIAKQRQ"}),
+        ("/api/fold/predict", {"sequence": "MKTAYIAKQRQ"}),
+    ]
+    for path, body in submissions:
+        r = client.post(path, json=body)
+        assert r.status_code == 200, f"{path} -> {r.status_code} {r.text[:200]}"
+        assert r.json()["job_id"]
+
+
+def test_remote_only_engine_without_api_key(client):
+    """没配 NVIDIA_API_KEY 时，远程 provider 要明说，不能静默失败。"""
+    r = client.post("/api/molmim/optimize", json={"smiles": "CCO"})
+    job = _wait(client, r.json()["job_id"])
+    assert job["status"] == "failed"
+    assert "NVIDIA_API_KEY" in job["error"]
 
 
 def test_unknown_job_404(client):

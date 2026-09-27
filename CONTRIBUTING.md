@@ -37,16 +37,19 @@ npm run check
 
 ## 新增一个模型引擎
 
-引擎都放在 `backend/app/engines/`，照着 `genmol_engine.py` 写：
+引擎都放在 `backend/app/engines/`，照着 `genmol.py` 写：
 
-1. **继承 `Engine`**，声明 `name`、`required_modules`、`checkpoint_name`。
+1. **写 provider**：继承 `Provider`，设 `kind = "local"` 或 `"remote"`，
+   声明 `required_modules`、`checkpoint_name`、`needs_api_key`。
+   接口先留着没实现的，设 `implemented = False` 并在 `note` 里写计划。
 2. **重型依赖必须延迟导入**——写在方法内部，不要写在模块顶部。
    服务启动时不能 import torch，否则没装 GPU 依赖的用户连 API 都起不来。
 3. **实现 `async def run(params, ctx)`**：
    - 阻塞的推理用 `loop.run_in_executor` 丢到线程池，别卡住事件循环
    - 用 `ctx.progress(0.5, "说明")` 报进度
    - 产出的文件用 `ctx.add_file(path)` 注册，前端才能下载
-4. **注册到 `app/engines/__init__.py` 的 `ENGINES`**。
+4. **组装引擎**：`Engine("name", local=..., remote=...)`，注册到 `app/engines/__init__.py`。
+   在 `app/config.py` 加一个 `<name>_provider` 配置项。
 5. 在 `app/schemas.py` 加请求模型，在 `app/routers/tools.py` 加路由。
 6. 依赖加到 `pyproject.toml` 的 `[dependency-groups]`，**单独一组**，不要塞进核心依赖。
 

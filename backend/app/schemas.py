@@ -49,12 +49,23 @@ class JobCreated(BaseModel):
     status: JobStatus
 
 
+class ProviderStatus(BaseModel):
+    kind: Literal["local", "remote"]
+    available: bool
+    reason: str = ""
+    note: str = ""
+    details: dict[str, Any] = {}
+
+
 class EngineStatus(BaseModel):
     name: str
     available: bool
+    #: 配置的偏好：auto / local / remote
+    preference: str = "auto"
+    #: 当前实际会用哪个 provider，None 表示都不可用
+    active: str | None = None
     reason: str = ""
-    checkpoint_present: bool = False
-    details: dict[str, Any] = {}
+    providers: list[ProviderStatus] = []
 
 
 class GpuInfo(BaseModel):
@@ -86,11 +97,27 @@ class GenMolRequest(BaseModel):
     min_add_len: int = Field(60, ge=1, le=256)
 
 
+class MolMimRequest(BaseModel):
+    """字段命名对齐 NVIDIA MolMIM /generate 接口，方便远程直传。"""
+
+    smiles: str = Field(..., description="起始分子 SMILES")
+    algorithm: Literal["CMA-ES", "none"] = "CMA-ES"
+    num_molecules: int = Field(10, ge=1, le=100)
+    property_name: Literal["QED", "plogP"] = "QED"
+    minimize: bool = False
+    iterations: int = Field(10, ge=1, le=1000)
+    particles: int = Field(30, ge=2, le=1000)
+    min_similarity: float = Field(0.7, ge=0.0, le=0.7)
+    scaled_radius: float = Field(1.0, ge=0.0, le=2.0)
+
+
 class DiffDockRequest(BaseModel):
-    protein_file_id: str
-    ligand_file_id: str
+    protein_file_id: str = Field(..., description="POST /api/files 上传 PDB 后拿到的 file_id")
+    ligand_file_id: str = Field(..., description="配体 SDF/MOL 的 file_id")
     num_poses: int = Field(10, ge=1, le=40)
-    inference_steps: int = Field(20, ge=1, le=100)
+    steps: int = Field(18, ge=1, le=100)
+    time_divisions: int = Field(20, ge=1, le=100)
+    save_trajectory: bool = False
 
 
 class MMseqsRequest(BaseModel):
@@ -102,8 +129,7 @@ class MMseqsRequest(BaseModel):
 
 
 class FoldRequest(BaseModel):
-    sequence: str
-    model: Literal["esmfold", "colabfold"] = "esmfold"
+    sequence: str = Field(..., min_length=1, max_length=4000, description="单条氨基酸序列")
 
 
 class UploadResponse(BaseModel):

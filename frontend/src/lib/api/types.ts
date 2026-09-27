@@ -23,12 +23,25 @@ export interface Job<T = unknown> {
 	error: string | null;
 }
 
+export type ProviderKind = 'local' | 'remote';
+
+export interface ProviderStatus {
+	kind: ProviderKind;
+	available: boolean;
+	reason: string;
+	note: string;
+	details: Record<string, unknown>;
+}
+
 export interface EngineStatus {
 	name: string;
 	available: boolean;
+	/** 配置的偏好：auto / local / remote */
+	preference: string;
+	/** 当前实际会用哪个 provider，null 表示都不可用 */
+	active: ProviderKind | null;
 	reason: string;
-	checkpoint_present: boolean;
-	details: Record<string, unknown>;
+	providers: ProviderStatus[];
 }
 
 export interface GpuInfo {
@@ -80,4 +93,75 @@ export interface GenMolResult {
 	valid: number;
 	validity: number;
 	unique: number;
+}
+
+export interface MolMimParams {
+	smiles: string;
+	algorithm?: 'CMA-ES' | 'none';
+	num_molecules?: number;
+	property_name?: 'QED' | 'plogP';
+	minimize?: boolean;
+	iterations?: number;
+	particles?: number;
+	min_similarity?: number;
+	scaled_radius?: number;
+}
+
+export interface MolMimResult extends GenMolResult {
+	input_smiles: string;
+	optimized_property: string;
+	best?: GeneratedMolecule;
+}
+
+export interface DiffDockParams {
+	protein_file_id: string;
+	ligand_file_id: string;
+	num_poses?: number;
+	steps?: number;
+	time_divisions?: number;
+	save_trajectory?: boolean;
+}
+
+export interface DockedPose {
+	rank: number | null;
+	confidence: number | null;
+	file: string;
+}
+
+export interface DiffDockResult {
+	poses: DockedPose[];
+	num_poses: number;
+	protein_file?: string;
+}
+
+export interface MMseqsParams {
+	sequence?: string;
+	file_id?: string;
+	database?: string;
+	sensitivity?: number;
+	max_hits?: number;
+}
+
+export interface SequenceHit {
+	target: string;
+	identity: number;
+	alignment_length: number;
+	evalue: string;
+	bit_score: number;
+}
+
+export interface MMseqsResult {
+	database: string;
+	hits: SequenceHit[];
+}
+
+export interface FoldParams {
+	sequence: string;
+}
+
+export interface FoldResult {
+	sequence_length: number;
+	pdb_file: string;
+	/** 直接丢给 Mol* 加载 */
+	viewer_url: string;
 }

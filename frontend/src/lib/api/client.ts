@@ -1,11 +1,19 @@
 // 后端 API 客户端。所有模型推理都是异步任务：提交拿 job_id，再轮询直到终态。
 
 import type {
+	DiffDockParams,
+	DiffDockResult,
+	FoldParams,
+	FoldResult,
 	GenMolParams,
 	GenMolResult,
 	HealthResponse,
 	Job,
 	JobStatus,
+	MMseqsParams,
+	MMseqsResult,
+	MolMimParams,
+	MolMimResult,
 	UploadResponse
 } from './types';
 
@@ -91,7 +99,27 @@ async function runJob<TResult>(
 	return job.result as TResult;
 }
 
-export const generateMolecules = (params: GenMolParams, onUpdate?: (j: Job<GenMolResult>) => void) =>
+type OnUpdate<T> = (job: Job<T>) => void;
+
+/** GenMol 分子生成 */
+export const generateMolecules = (params: GenMolParams, onUpdate?: OnUpdate<GenMolResult>) =>
 	runJob<GenMolResult>('/api/genmol/generate', params, onUpdate);
 
+/** MolMIM 分子性质优化 */
+export const optimizeMolecule = (params: MolMimParams, onUpdate?: OnUpdate<MolMimResult>) =>
+	runJob<MolMimResult>('/api/molmim/optimize', params, onUpdate);
+
+/** DiffDock 分子对接。protein/ligand 先用 uploadFile 拿 file_id */
+export const dockMolecule = (params: DiffDockParams, onUpdate?: OnUpdate<DiffDockResult>) =>
+	runJob<DiffDockResult>('/api/diffdock/dock', params, onUpdate);
+
+/** MMseqs2 序列搜索 */
+export const searchSequence = (params: MMseqsParams, onUpdate?: OnUpdate<MMseqsResult>) =>
+	runJob<MMseqsResult>('/api/mmseqs/search', params, onUpdate);
+
+/** ESMFold 结构预测 */
+export const predictStructure = (params: FoldParams, onUpdate?: OnUpdate<FoldResult>) =>
+	runJob<FoldResult>('/api/fold/predict', params, onUpdate);
+
+/** 把后端返回的相对路径拼成完整 URL（给 Mol* 或下载链接用） */
 export const fileUrl = (path: string) => `${API_BASE}${path}`;

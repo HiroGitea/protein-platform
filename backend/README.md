@@ -31,11 +31,19 @@ app/
 │   ├── jobs.py      GET  /api/jobs/{id}、取消、下载结果
 │   ├── files.py     POST /api/files 上传
 │   └── tools.py     POST /api/{engine}/... 提交推理任务
+├── nvidia_api.py    NVIDIA NIM 托管 API 客户端
+├── chem.py          rdkit 分子性质计算
 └── engines/
-    ├── base.py          引擎抽象 + 就绪检查
-    ├── _planned.py      未实现引擎的共同基类
-    └── *_engine.py      各模型引擎
+    ├── base.py      Provider / Engine 抽象 + 就绪检查
+    ├── genmol.py    local + remote
+    ├── molmim.py    local(预留) + remote
+    ├── diffdock.py  local + remote
+    ├── fold.py      local(预留) + remote
+    └── mmseqs.py    local
 ```
+
+每个引擎下挂 local / remote 两个 provider，由 `.env` 中的
+`PROTEIN_<ENGINE>_PROVIDER=auto|local|remote` 选择。
 
 ## 设计要点
 
@@ -56,6 +64,8 @@ app/
 
 ```bash
 uv sync --group genmol     # torch cu128 + transformers + safe-mol + rdkit
+uv sync --group diffdock   # torch cu128 + torch-geometric + rdkit
+uv sync --group fold       # torch cu128 + transformers（ESMFold）
 uv sync --group dev        # ruff + pytest
 ```
 

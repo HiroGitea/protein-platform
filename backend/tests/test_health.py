@@ -2,21 +2,40 @@
 
 from __future__ import annotations
 
+ALL_ENGINES = {"genmol", "molmim", "diffdock", "mmseqs", "fold"}
+
 
 def test_health_ok(client):
     r = client.get("/api/health")
     assert r.status_code == 200
     body = r.json()
     assert body["status"] == "ok"
-    assert {"genmol", "diffdock", "mmseqs", "fold"} <= {e["name"] for e in body["engines"]}
+    assert ALL_ENGINES <= {e["name"] for e in body["engines"]}
 
 
 def test_unavailable_engine_explains_why(client):
     """引擎未就绪时必须说明缺什么，不能只给个 false。"""
-    engines = client.get("/api/health").json()["engines"]
-    for engine in engines:
+    for engine in client.get("/api/health").json()["engines"]:
         if not engine["available"]:
             assert engine["reason"], f"{engine['name']} 未就绪但没给原因"
+
+
+def test_every_provider_reports_reason(client):
+    """每个 provider 单独报告可用性和原因。"""
+    for engine in client.get("/api/health").json()["engines"]:
+        assert engine["providers"], f"{engine['name']} 没有任何 provider"
+        for p in engine["providers"]:
+            assert p["kind"] in ("local", "remote")
+            if not p["available"]:
+                assert p["reason"], f"{engine['name']}/{p['kind']} 不可用但没给原因"
+
+
+def test_engines_expose_both_providers(client):
+    """除 mmseqs（官方无托管搜索 API）外，都应有 local + remote 两条路。"""
+    engines = {e["name"]: e for e in client.get("/api/health").json()["engines"]}
+    for name in ALL_ENGINES - {"mmseqs"}:
+        kinds = {p["kind"] for p in engines[name]["providers"]}
+        assert kinds == {"local", "remote"}, f"{name} 缺 provider: {kinds}"
 
 
 def test_gpu_info_present(client):
