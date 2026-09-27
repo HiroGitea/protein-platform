@@ -117,7 +117,7 @@ export const dockMolecule = (params: DiffDockParams, onUpdate?: OnUpdate<DiffDoc
 export const searchSequence = (params: MMseqsParams, onUpdate?: OnUpdate<MMseqsResult>) =>
 	runJob<MMseqsResult>('/api/mmseqs/search', params, onUpdate);
 
-/** ESMFold 结构预测 */
+/** AlphaFold 2 结构预测 */
 export const predictStructure = (params: FoldParams, onUpdate?: OnUpdate<FoldResult>) =>
 	runJob<FoldResult>('/api/fold/predict', params, onUpdate);
 

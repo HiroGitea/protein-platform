@@ -47,6 +47,13 @@ class Settings(BaseSettings):
     nvidia_api_base: str = "https://health.api.nvidia.com/v1/biology"
     remote_timeout_seconds: float = 300.0
 
+    # ---- AlphaFold 2 NIM（独立服务，不复用 biology API 路径或凭据）----
+    af2_local_url: str = ""
+    af2_remote_url: str = ""
+    af2_api_key: str = ""
+    af2_timeout_seconds: float = Field(7200.0, gt=0)
+    af2_poll_interval_seconds: float = Field(5.0, gt=0)
+
     # ---- 运行时 ----
     device: str = "cuda"
     max_concurrent_jobs: int = 1  # 单卡 16GB，默认串行，避免显存打架

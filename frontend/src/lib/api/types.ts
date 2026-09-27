@@ -157,9 +157,13 @@ export interface MMseqsResult {
 
 export interface FoldParams {
 	sequence: string;
+	algorithm?: 'jackhmmer' | 'mmseqs2';
+	relax_prediction?: boolean;
 }
 
 export interface FoldResult {
+	model: 'alphafold2';
+	pdb_files: string[];
 	sequence_length: number;
 	pdb_file: string;
 	/** 直接丢给 Mol* 加载 */

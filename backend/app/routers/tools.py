@@ -52,5 +52,5 @@ async def mmseqs_search(req: MMseqsRequest) -> JobCreated:
 
 @router.post("/fold/predict", response_model=JobCreated)
 async def fold_predict(req: FoldRequest) -> JobCreated:
-    """蛋白质结构预测（ESMFold）。默认走远程。"""
+    """蛋白质结构预测（AlphaFold 2）。连接配置的 NIM 服务。"""
     return _submit("fold", req.model_dump())

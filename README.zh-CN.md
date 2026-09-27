@@ -29,10 +29,10 @@
 | 分子优化 | MolMIM (70M) | 📋 接口预留 | ✅ 已实现 |
 | 分子对接 | DiffDock | ✅ 已实现 | ✅ 已实现 |
 | 序列搜索 | MMseqs2 | ✅ CPU | — |
-| 结构预测 | AlphaFold 2 | 📋 计划接入 | 📋 计划接入 |
+| 结构预测 | AlphaFold 2 | NIM 服务适配器 | 远程 NIM 服务适配器 |
 | 分子可视化 | Mol* | ✅ 前端完成 | — |
 
-> AlphaFold 2 计划接入；当前 `/api/fold/predict` 仍使用 ESMFold，尚不支持 AlphaFold 2。
+> AlphaFold 2 已接入独立部署的 NIM 服务；公共托管端点已弃用，请按 [配置指南](docs/alphafold2.md) 设置服务地址。
 > 本地推理需要安装对应依赖并准备模型权重或数据库，远程推理需要配置 API key。
 > Mol* 查看器已接入；推理页面目前仍使用示例数据，接入后端的工作见路线图。
 > 可通过下方的 REST API 示例运行推理任务。
@@ -166,7 +166,7 @@ const result = await generateMolecules(
 > `no kernel image is available for execution on the device`。
 > 本项目的依赖组已改为 `torch>=2.7` 并使用 cu128 源。
 
-AlphaFold 2 的集成与资源配置将随实现补充。
+AlphaFold 2 的部署要求与环境变量见 [配置指南](docs/alphafold2.md)。
 
 ## 第三方模型与许可证
 
@@ -178,7 +178,7 @@ AlphaFold 2 的集成与资源配置将随实现补充。
 | [MolMIM](https://github.com/NVIDIA/bionemo-framework) | Apache-2.0 | NVIDIA AI Foundation Models Community License |
 | [DiffDock](https://github.com/gcorso/DiffDock) | MIT | MIT |
 | [MMseqs2](https://github.com/soedinglab/MMseqs2) | GPLv3 ⚠️ | — |
-| [ESMFold](https://github.com/facebookresearch/esm) | MIT | MIT |
+| [AlphaFold 2](https://github.com/google-deepmind/alphafold) | 见上游许可 | 见上游及 NIM 条款 |
 | [Mol*](https://github.com/molstar/molstar) | MIT | — |
 
 MMseqs2 是 GPLv3，本项目只通过子进程调用其命令行，不链接其代码。
@@ -199,7 +199,7 @@ protein-platform/
 - [x] 五个引擎的 local / remote 实现或接口
 - [x] 前端 API 客户端
 - [ ] 前端各页面接入真实后端，移除 mock 数据
-- [ ] 接入 AlphaFold 2 结构预测
+- [x] 接入本地或远程 AlphaFold 2 NIM 服务
 - [ ] 用户认证与任务历史
 
 ## 贡献

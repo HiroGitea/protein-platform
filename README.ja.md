@@ -33,10 +33,10 @@
 | 分子最適化 | MolMIM (70M) | 📋 インターフェースのみ | ✅ 実装済み |
 | 分子ドッキング | DiffDock | ✅ 実装済み | ✅ 実装済み |
 | 配列検索 | MMseqs2 | ✅ 実装済み | — |
-| 構造予測 | AlphaFold 2 | 📋 対応予定 | 📋 対応予定 |
+| 構造予測 | AlphaFold 2 | NIM サービス接続 | リモート NIM サービス接続 |
 | 分子ビューア | Mol* | ✅ フロントエンド完成 | — |
 
-> AlphaFold 2 は対応予定です。現在の `/api/fold/predict` は ESMFold を使用しており、AlphaFold 2 は実行しません。
+> AlphaFold 2 は独立した NIM サービスに接続します。公開 API は廃止予定のため、[設定ガイド](docs/alphafold2.md) に従って接続先を指定してください。
 > ローカル推論には依存関係のインストールと、重み・データベースの準備が必要です。
 > リモート推論には各自の API キーが必要です。すべての組み合わせを実際に検証したわけではありません。
 
@@ -100,7 +100,7 @@ http://localhost:5173 を開きます。
 NVIDIA_API_KEY=nvapi-xxxxxxxx
 ```
 
-バックエンドを再起動すると、GenMol・MolMIM・DiffDock・構造予測が使えるようになります。
+バックエンドを再起動し、GenMol・MolMIM・DiffDock の状態を確認してください。AlphaFold 2 は別途サービスの設定が必要です。
 
 ### 3b. ローカル GPU を使う
 
@@ -167,7 +167,7 @@ const result = await generateMolecules(
 > `no kernel image is available for execution on the device` で失敗します。
 > 本プロジェクトの依存グループは `torch>=2.7` と cu128 インデックスを使うよう変更済みです。
 
-AlphaFold 2 の導入手順と必要なリソースは、実装に合わせて追加する予定です。
+AlphaFold 2 の導入手順は [設定ガイド](docs/alphafold2.md) を参照してください。
 
 ## サードパーティのモデルとライセンス
 
@@ -180,7 +180,7 @@ AlphaFold 2 の導入手順と必要なリソースは、実装に合わせて�
 | [MolMIM](https://github.com/NVIDIA/bionemo-framework) | Apache-2.0 | NVIDIA AI Foundation Models Community License |
 | [DiffDock](https://github.com/gcorso/DiffDock) | MIT | MIT |
 | [MMseqs2](https://github.com/soedinglab/MMseqs2) | GPLv3 ⚠️ | — |
-| [ESMFold](https://github.com/facebookresearch/esm) | MIT | MIT |
+| [AlphaFold 2](https://github.com/google-deepmind/alphafold) | 上流のライセンスを参照 | 上流および NIM の利用規約を参照 |
 | [Mol*](https://github.com/molstar/molstar) | MIT | — |
 
 MMseqs2 は GPLv3 です。本プロジェクトはそのコマンドラインバイナリをサブプロセスとして呼び出すだけで、コードにはリンクしていません。
@@ -201,7 +201,7 @@ protein-platform/
 - [x] 5 つのエンジンの local / remote 実装またはインターフェース
 - [x] フロントエンドの API クライアント
 - [ ] フロントエンドの各ページを実際のバックエンドにつなぎ、モックデータを削除
-- [ ] AlphaFold 2 による構造予測の統合
+- [x] ローカル・リモート AlphaFold 2 NIM サービスへの接続
 - [ ] ユーザー認証とジョブ履歴
 
 ## コントリビューション

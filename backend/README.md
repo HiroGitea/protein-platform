@@ -38,7 +38,7 @@ app/
     ├── genmol.py    local + remote
     ├── molmim.py    local(预留) + remote
     ├── diffdock.py  local + remote
-    ├── fold.py      local(预留) + remote
+    ├── fold.py      AlphaFold 2 本地 / 远程 NIM 服务
     └── mmseqs.py    local
 ```
 
@@ -65,7 +65,7 @@ app/
 ```bash
 uv sync --group genmol     # torch cu128 + transformers + safe-mol + rdkit
 uv sync --group diffdock   # torch cu128 + torch-geometric + rdkit
-uv sync --group fold       # torch cu128 + transformers（ESMFold）
+# AlphaFold 2 使用独立 NIM 服务，无需安装 Python fold 依赖组
 uv sync --group dev        # ruff + pytest
 ```
 
@@ -80,3 +80,7 @@ uv run ruff check app tests
 ```
 
 测试不需要任何 GPU 依赖——它们验证的正是"没装依赖时行为要正确"。
+
+## AlphaFold 2
+
+结构预测已改用独立部署的 AlphaFold 2 NIM 服务。配置与请求示例见 [AlphaFold 2 指南](../docs/alphafold2.md)。

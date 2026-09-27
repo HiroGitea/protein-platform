@@ -33,16 +33,16 @@ Protein Platform brings protein and small-molecule tools together behind a share
 | Molecule optimization | MolMIM | Planned | Implemented |
 | Molecular docking | DiffDock | Implemented · GPU | Implemented |
 | Sequence search | MMseqs2 | Implemented · CPU | — |
-| Structure prediction | AlphaFold 2 | Planned | Planned |
+| Structure prediction | AlphaFold 2 | NIM service adapter | Remote NIM service adapter¹ |
 | Structure and ligand visualization | Mol* | Browser | — |
 
-The table distinguishes implemented providers from planned integrations. AlphaFold 2 integration is planned; the existing `/api/fold/predict` endpoint still uses ESMFold and does not run AlphaFold 2. Local engines require their dependencies and model assets; hosted engines require API access. End-to-end validation across all provider configurations is still pending.
+¹ AlphaFold 2 requires a separately deployed NIM service. NVIDIA’s public AF2 endpoint is deprecated; configure an explicit local or remote address. See the [AlphaFold 2 setup guide](docs/alphafold2.md). Local engines require their dependencies and model assets; hosted engines require API access. End-to-end validation across all provider configurations is still pending.
 
 **Web interface status:** the Mol* viewer is integrated. Inference pages currently use sample data; connecting them to the backend is on the [roadmap](#roadmap). Use the REST API below to submit inference jobs.
 
 ## Quick start
 
-You will need **Git**, **Python 3.11+**, **uv**, and **Node.js with npm**. The web service can start without GPU dependencies. Hosted inference requires an NVIDIA API key with access to the selected model.
+You will need **Git**, **Python 3.11+**, **uv**, and **Node.js with npm**. The web service can start without GPU dependencies. Hosted GenMol, MolMIM, and DiffDock inference requires an NVIDIA API key with access to the selected model. AlphaFold 2 uses a [separately configured NIM service](docs/alphafold2.md).
 
 ### 1. Clone and configure
 
@@ -138,7 +138,7 @@ Choose a provider independently for each engine in `backend/.env`:
 PROTEIN_GENMOL_PROVIDER=auto
 PROTEIN_MOLMIM_PROVIDER=remote
 PROTEIN_DIFFDOCK_PROVIDER=auto
-PROTEIN_FOLD_PROVIDER=remote
+PROTEIN_FOLD_PROVIDER=auto
 PROTEIN_MMSEQS_PROVIDER=local
 ```
 
@@ -207,8 +207,8 @@ flowchart TD
     API["REST API · FastAPI"]
     Jobs["Asynchronous job manager"]
     Engines["Engine providers"]
-    Local["Local execution · GPU models / MMseqs2"]
-    Remote["Hosted inference · NVIDIA APIs"]
+    Local["Local execution · GPU models / MMseqs2 / AF2 NIM"]
+    Remote["Remote execution · NVIDIA APIs / AF2 NIM"]
 
     UI --> Viewer
     UI -. integration in progress .-> Client
@@ -240,7 +240,7 @@ See the [backend guide](backend/README.md) and [frontend guide](frontend/README.
 - [x] Hosted MolMIM provider and local MMseqs2 search
 - [x] Mol* viewer and shared TypeScript API client
 - [ ] Connect inference pages to the backend and replace sample data
-- [ ] Integrate AlphaFold 2 for structure prediction
+- [x] Integrate AlphaFold 2 through local and remote NIM services
 - [ ] Implement local MolMIM optimization
 - [ ] Add user authentication and persistent job history
 

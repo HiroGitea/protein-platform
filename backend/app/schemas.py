@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class JobStatus(str, Enum):
@@ -129,7 +129,22 @@ class MMseqsRequest(BaseModel):
 
 
 class FoldRequest(BaseModel):
-    sequence: str = Field(..., min_length=1, max_length=4000, description="单条氨基酸序列")
+    sequence: str = Field(
+        ...,
+        min_length=1,
+        max_length=4096,
+        pattern=r"^[ARNDCQEGHILKMFPSTWYV]+$",
+        description="AlphaFold 2 单条氨基酸序列（20 种标准氨基酸，不含 FASTA 标题）",
+    )
+    algorithm: Literal["jackhmmer", "mmseqs2"] = "jackhmmer"
+    relax_prediction: bool = True
+
+    @field_validator("sequence", mode="before")
+    @classmethod
+    def normalize_sequence(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return "".join(value.split()).upper()
+        return value
 
 
 class UploadResponse(BaseModel):
