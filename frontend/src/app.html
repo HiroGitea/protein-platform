@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN" class="dark">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>生物信息学平台</title>
+		
+		<!-- 预加载Molstar资源 -->
+		<link rel="preload" href="%sveltekit.assets%/vendor/molstar/molstar.js" as="script" crossorigin>
+		<link rel="preload" href="%sveltekit.assets%/vendor/molstar/molstar.css" as="style">
+		<link rel="stylesheet" href="%sveltekit.assets%/vendor/molstar/molstar.css">
+		
+		%sveltekit.head%
+	</head>
+	<body class="bg-white dark:bg-gray-900 text-black dark:text-white" data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+		
+		<!-- 动态加载Molstar JavaScript -->
+		<script>
+			// 检查是否需要加载Molstar
+			if (window.location.pathname.includes('/molviewer') || 
+			    window.location.pathname.includes('/diffdock')) {
+				const script = document.createElement('script');
+				script.src = '%sveltekit.assets%/vendor/molstar/molstar.js';
+				script.async = true;
+				script.onload = () => {
+					console.log('Molstar JavaScript已加载');
+					window.dispatchEvent(new Event('molstarLoaded'));
+				};
+				script.onerror = () => {
+					console.error('Molstar JavaScript加载失败');
+				};
+				document.head.appendChild(script);
+			}
+		</script>
+	</body>
+</html> 

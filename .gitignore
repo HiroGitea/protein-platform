@@ -1,0 +1,47 @@
+# ---- Python / 后端 ----
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# ---- Node / 前端 ----
+node_modules/
+.svelte-kit/
+build/
+dist/
+.vite/
+
+# ---- 第三方模型源码：由 scripts/setup-*.sh 克隆，不进本仓库 ----
+backend/genmol/
+backend/third_party/
+
+# ---- 模型权重与数据库：太大，不进仓库 ----
+backend/checkpoints/*
+!backend/checkpoints/.gitkeep
+backend/databases/
+*.ckpt
+*.pt
+*.pth
+*.nemo
+*.safetensors
+
+# ---- 运行时产物 ----
+backend/storage/uploads/*
+backend/storage/jobs/*
+!backend/storage/uploads/.gitkeep
+!backend/storage/jobs/.gitkeep
+
+# ---- 密钥与本地配置 ----
+.env
+.env.local
+*.key
+
+# ---- 前端 vendor 资源：由 copy-molstar-assets.js 生成 ----
+frontend/static/vendor/
+
+# ---- 编辑器 / 系统 ----
+.DS_Store
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,26 @@
+protein-platform
+Copyright 2026 protein-platform contributors
+
+Licensed under the Apache License, Version 2.0.
+
+本项目集成以下第三方模型与工具，各自受其原有许可证约束，
+本仓库不分发它们的代码或权重，由安装脚本在本地获取：
+
+- GenMol (NVIDIA)
+  代码: Apache-2.0  https://github.com/NVIDIA-Digital-Bio/genmol
+  权重: NVIDIA Open Model License
+- MolMIM (NVIDIA BioNeMo)
+  代码: Apache-2.0  https://github.com/NVIDIA/bionemo-framework
+  权重: NVIDIA AI Foundation Models Community License
+- DiffDock (MIT)
+  https://github.com/gcorso/DiffDock
+- MMseqs2 (GPLv3)
+  https://github.com/soedinglab/MMseqs2
+  注意: GPLv3。本项目通过子进程调用其命令行二进制，不链接其代码。
+- ESMFold / ESM-2 (Meta, MIT)
+  https://github.com/facebookresearch/esm
+- Mol* (MIT)
+  https://github.com/molstar/molstar
+
+通过官方托管 API 调用上述模型时，另受各服务方条款约束
+（如 NVIDIA build.nvidia.com 的使用条款）。
