@@ -42,13 +42,6 @@ diffdock = [
     "scipy>=1.14",
     "networkx>=3.4",
 ]
-fold = [
-    # ESMFold 走 transformers 的 EsmForProteinFolding，不需要 fair-esm
-    "torch>=2.7",
-    "transformers>=4.52",
-    "accelerate>=1.2",
-    "biopython>=1.84",
-]
 dev = [
     "ruff>=0.9",
     "pytest>=8.3",

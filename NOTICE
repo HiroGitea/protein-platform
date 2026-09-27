@@ -17,7 +17,10 @@ Licensed under the Apache License, Version 2.0.
 - MMseqs2 (GPLv3)
   https://github.com/soedinglab/MMseqs2
   注意: GPLv3。本项目通过子进程调用其命令行二进制，不链接其代码。
-- ESMFold / ESM-2 (Meta, MIT)
+- AlphaFold 2 (Google DeepMind)
+  https://github.com/google-deepmind/alphafold
+  通过独立部署的 NVIDIA NIM 服务调用，模型与服务适用各自的上游许可及条款
+- ESM-2 (Meta, MIT; used by DiffDock)
   https://github.com/facebookresearch/esm
 - Mol* (MIT)
   https://github.com/molstar/molstar

@@ -6,7 +6,7 @@
 - MolMIM   /nvidia/molmim/generate   官方 schema 已核实
 - DiffDock /mit/diffdock             官方 schema 已核实
 - GenMol   /nvidia/genmol/generate   字段名未逐一核实，以官方文档为准
-- ESMFold  /nvidia/esmfold           字段名未逐一核实，以官方文档为准
+- AlphaFold 2 使用独立的 NIM 服务客户端，见 engines/fold.py
 
 标注"未核实"的部分如果调用报 422，对照
 https://docs.api.nvidia.com/nim/reference/ 调整字段名即可，改这一个文件就够。

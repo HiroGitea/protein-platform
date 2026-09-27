@@ -2,7 +2,7 @@
 
 # protein-platform
 
-[中文](README.md) · [English](README.en.md) · **日本語**
+[English](README.md) · [简体中文](README.zh-CN.md) · **日本語**
 
 タンパク質の構造予測、分子ドッキング、配列検索、分子生成をひとつにまとめた
 バイオインフォマティクスプラットフォームです。
@@ -33,11 +33,11 @@
 | 分子最適化 | MolMIM (70M) | 📋 インターフェースのみ | ✅ 実装済み |
 | 分子ドッキング | DiffDock | ✅ 実装済み | ✅ 実装済み |
 | 配列検索 | MMseqs2 | ✅ 実装済み | — |
-| 構造予測 | ESMFold | 📋 インターフェースのみ | ✅ 実装済み |
+| 構造予測 | AlphaFold 2 | NIM サービス接続 | リモート NIM サービス接続 |
 | 分子ビューア | Mol* | ✅ フロントエンド完成 | — |
 
-> これはショーケース用のプロジェクトです。コードとインターフェースは揃っていますが、
-> ローカル推論には重みとデータベースを各自でダウンロードする必要があり、
+> AlphaFold 2 は独立した NIM サービスに接続します。公開 API は廃止予定のため、[設定ガイド](docs/alphafold2.md) に従って接続先を指定してください。
+> ローカル推論には依存関係のインストールと、重み・データベースの準備が必要です。
 > リモート推論には各自の API キーが必要です。すべての組み合わせを実際に検証したわけではありません。
 
 ## アーキテクチャ
@@ -100,7 +100,7 @@ http://localhost:5173 を開きます。
 NVIDIA_API_KEY=nvapi-xxxxxxxx
 ```
 
-バックエンドを再起動すると、GenMol・MolMIM・DiffDock・構造予測が使えるようになります。
+バックエンドを再起動し、GenMol・MolMIM・DiffDock の状態を確認してください。AlphaFold 2 は別途サービスの設定が必要です。
 
 ### 3b. ローカル GPU を使う
 
@@ -167,8 +167,7 @@ const result = await generateMolecules(
 > `no kernel image is available for execution on the device` で失敗します。
 > 本プロジェクトの依存グループは `torch>=2.7` と cu128 インデックスを使うよう変更済みです。
 
-構造予測には完全な AlphaFold2/OpenFold ではなく ESMFold を採用しています。
-前者の MSA データベースは 2TB を超え、GPU 1 枚の環境には向きません。
+AlphaFold 2 の導入手順は [設定ガイド](docs/alphafold2.md) を参照してください。
 
 ## サードパーティのモデルとライセンス
 
@@ -181,7 +180,7 @@ const result = await generateMolecules(
 | [MolMIM](https://github.com/NVIDIA/bionemo-framework) | Apache-2.0 | NVIDIA AI Foundation Models Community License |
 | [DiffDock](https://github.com/gcorso/DiffDock) | MIT | MIT |
 | [MMseqs2](https://github.com/soedinglab/MMseqs2) | GPLv3 ⚠️ | — |
-| [ESMFold](https://github.com/facebookresearch/esm) | MIT | MIT |
+| [AlphaFold 2](https://github.com/google-deepmind/alphafold) | 上流のライセンスを参照 | 上流および NIM の利用規約を参照 |
 | [Mol*](https://github.com/molstar/molstar) | MIT | — |
 
 MMseqs2 は GPLv3 です。本プロジェクトはそのコマンドラインバイナリをサブプロセスとして呼び出すだけで、コードにはリンクしていません。
@@ -202,7 +201,7 @@ protein-platform/
 - [x] 5 つのエンジンの local / remote 実装またはインターフェース
 - [x] フロントエンドの API クライアント
 - [ ] フロントエンドの各ページを実際のバックエンドにつなぎ、モックデータを削除
-- [ ] ESMFold のローカル実装
+- [x] ローカル・リモート AlphaFold 2 NIM サービスへの接続
 - [ ] ユーザー認証とジョブ履歴
 
 ## コントリビューション
