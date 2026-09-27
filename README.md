@@ -1,206 +1,259 @@
 <div align="center">
 
-# protein-platform
+# Protein Platform
 
-**中文** · [English](README.en.md) · [日本語](README.ja.md)
+**Protein and molecular workflows, connected.**
 
-一个整合蛋白质结构预测、分子对接、序列搜索和分子生成的生物信息学平台。
-每个模型都支持**本地 GPU 推理**和**官方托管 API** 两种后端，可随时切换。
+Structure prediction · Molecular docking · Sequence search · Molecule generation
 
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](backend/pyproject.toml)
-[![SvelteKit](https://img.shields.io/badge/frontend-SvelteKit-ff3e00.svg)](frontend/package.json)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-2563eb.svg?style=flat-square)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776ab?style=flat-square)](backend/pyproject.toml)
+[![SvelteKit](https://img.shields.io/badge/SvelteKit-ff3e00?style=flat-square&logo=svelte&logoColor=white)](frontend/package.json)
+
+**English** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
+
+[Quick start](#quick-start) · [Features](#features) · [API](#api) · [Architecture](#architecture) · [Contributing](#contributing)
 
 </div>
 
-## 特点
+---
 
-- **统一任务模型**：所有推理都是异步任务。提交后拿到 `job_id`，轮询进度，下载结果文件。
-- **双 provider**：同一个功能可以跑在自己的显卡上，也可以调用官方托管 API。
-  没有显卡时先用远程跑通流程，有显卡再切到本地，前端代码不用改。
-- **缺什么说什么**：某个引擎缺依赖、缺权重或缺 API key 时，只有它自己报"不可用"并说明原因，
-  不会拖垮整个服务，也**不会返回假数据**。
+Protein Platform brings protein and small-molecule tools together behind a shared API and web interface. Run supported engines on local hardware or use NVIDIA hosted APIs, with a consistent workflow for submitting jobs, tracking progress, and retrieving results.
 
-## 功能
+- **A shared job API.** Generation, optimization, docking, search, and folding use the same asynchronous task lifecycle.
+- **Flexible execution.** Configure providers per engine, with local-first selection when both providers are available.
+- **Clear engine diagnostics.** Check dependencies, model weights, API credentials, and GPU information through one health endpoint. An unavailable engine does not prevent the service from starting.
+- **Molecular visualization.** Inspect protein structures and ligands together in the browser with Mol*.
 
-| 功能 | 模型 | 本地 GPU | 官方托管 API |
-|---|---|---|---|
-| 分子生成 | GenMol (89M) | ✅ 已实现 | ✅ 已实现 |
-| 分子优化 | MolMIM (70M) | 📋 接口预留 | ✅ 已实现 |
-| 分子对接 | DiffDock | ✅ 已实现 | ✅ 已实现 |
-| 序列搜索 | MMseqs2 | ✅ 已实现 | — |
-| 结构预测 | ESMFold | 📋 接口预留 | ✅ 已实现 |
-| 分子可视化 | Mol* | ✅ 前端完成 | — |
+## Features
 
-> 这是一个展示项目。代码与接口已经完整，但本地推理需要自行下载权重和数据库，
-> 远程推理需要自行申请 API key，作者没有在所有组合上逐一实测。
+| Workflow | Engine | Local execution | Hosted API |
+| :--- | :--- | :--- | :--- |
+| Molecule generation | GenMol | Implemented · GPU | Implemented |
+| Molecule optimization | MolMIM | Planned | Implemented |
+| Molecular docking | DiffDock | Implemented · GPU | Implemented |
+| Sequence search | MMseqs2 | Implemented · CPU | — |
+| Structure prediction | AlphaFold 2 | Planned | Planned |
+| Structure and ligand visualization | Mol* | Browser | — |
 
-## 架构
+The table distinguishes implemented providers from planned integrations. AlphaFold 2 integration is planned; the existing `/api/fold/predict` endpoint still uses ESMFold and does not run AlphaFold 2. Local engines require their dependencies and model assets; hosted engines require API access. End-to-end validation across all provider configurations is still pending.
 
-```
-┌──────────────────────────────────────────┐
-│  frontend/   SvelteKit + Tailwind + Mol*  │
-│  $lib/api/client.ts   提交 / 轮询 / 下载   │
-└───────────────────┬──────────────────────┘
-                    │ REST
-┌───────────────────▼──────────────────────┐
-│  backend/    FastAPI                      │
-│  ├─ routers/   HTTP 层                    │
-│  ├─ jobs.py    异步任务队列（单卡默认串行）│
-│  └─ engines/   每个引擎 = local + remote  │
-└─────────┬────────────────────┬───────────┘
-          ▼                    ▼
-    本地 GPU / 二进制      NVIDIA NIM 托管 API
+**Web interface status:** the Mol* viewer is integrated. Inference pages currently use sample data; connecting them to the backend is on the [roadmap](#roadmap). Use the REST API below to submit inference jobs.
+
+## Quick start
+
+You will need **Git**, **Python 3.11+**, **uv**, and **Node.js with npm**. The web service can start without GPU dependencies. Hosted inference requires an NVIDIA API key with access to the selected model.
+
+### 1. Clone and configure
+
+```bash
+git clone https://github.com/HiroGitea/protein-platform.git
+cd protein-platform
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
-provider 选择规则（`.env` 里每个引擎单独配置）：
+For hosted inference, set the following in `backend/.env` using a key from [NVIDIA Build](https://build.nvidia.com):
 
-| 值 | 行为 |
-|---|---|
-| `auto`（默认） | 本地可用就用本地，否则退到远程 |
-| `local` | 只用本地 |
-| `remote` | 只用托管 API |
+```dotenv
+NVIDIA_API_KEY=your-api-key
+```
 
-## 快速开始
+Provider selection defaults to `auto`: a ready local provider is preferred; otherwise, the engine checks its hosted provider. See [provider configuration](#provider-configuration) to choose explicitly.
 
-### 1. 后端
+### 2. Start the backend
+
+From the repository root:
 
 ```bash
 cd backend
 uv sync
-cp .env.example .env
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-- API 文档：http://127.0.0.1:8000/docs
-- 状态检查：http://127.0.0.1:8000/api/health —— 显卡信息、每个引擎和 provider 的可用性与缺失项
+| Resource | URL |
+| :--- | :--- |
+| Interactive API documentation | http://127.0.0.1:8000/docs |
+| GPU and engine diagnostics | http://127.0.0.1:8000/api/health |
 
-### 2. 前端
+### 3. Start the frontend
+
+In a second terminal, from the repository root:
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env
 npm run dev
 ```
 
-打开 http://localhost:5173。
+Open **http://localhost:5173**. The backend URL is configured through `VITE_API_BASE` in `frontend/.env`.
 
-### 3a. 用托管 API（无需显卡）
+## API
 
-到 [build.nvidia.com](https://build.nvidia.com) 免费申请 API key，填入 `backend/.env`：
+Every inference request returns a `job_id`. Poll the job to track progress, then download its output files once its status is `succeeded`.
 
 ```bash
-NVIDIA_API_KEY=nvapi-xxxxxxxx
+# Submit a molecule-generation job.
+curl -X POST http://127.0.0.1:8000/api/genmol/generate \
+  -H 'Content-Type: application/json' \
+  -d '{"mode":"denovo","num_samples":10}'
+
+# Replace this value with the job_id returned above.
+JOB_ID=your-job-id
+
+# Inspect status, progress, errors, and output file URLs.
+curl "http://127.0.0.1:8000/api/jobs/$JOB_ID"
+
+# Download after the job succeeds.
+curl -fO "http://127.0.0.1:8000/api/jobs/$JOB_ID/files/molecules.smi"
 ```
 
-重启后端，GenMol / MolMIM / DiffDock / 结构预测即可使用。
+Jobs move from `queued` to `running`, then finish as `succeeded`, `failed`, or `cancelled`. A submission response acknowledges the job; check its final status for the inference result.
 
-### 3b. 用本地 GPU
+<details>
+<summary><strong>Endpoint reference</strong></summary>
+
+| Method | Endpoint | Purpose |
+| :--- | :--- | :--- |
+| `GET` | `/api/health` | GPU information and engine readiness |
+| `POST` | `/api/files` | Upload input files, including PDB, SDF, and FASTA |
+| `POST` | `/api/genmol/generate` | Generate molecules |
+| `POST` | `/api/molmim/optimize` | Optimize molecules |
+| `POST` | `/api/diffdock/dock` | Dock a ligand to a protein |
+| `POST` | `/api/mmseqs/search` | Search a sequence database |
+| `POST` | `/api/fold/predict` | Predict a protein structure |
+| `GET` | `/api/jobs/{job_id}` | Read job status and results |
+| `POST` | `/api/jobs/{job_id}/cancel` | Request job cancellation |
+| `GET` | `/api/jobs/{job_id}/files/{filename}` | Download an output file |
+
+Request schemas are available in the backend's [interactive API docs](http://127.0.0.1:8000/docs). The [TypeScript client](frontend/src/lib/api/client.ts) provides helpers for submission, polling, uploads, and downloads.
+
+</details>
+
+## Provider configuration
+
+Choose a provider independently for each engine in `backend/.env`:
+
+```dotenv
+PROTEIN_GENMOL_PROVIDER=auto
+PROTEIN_MOLMIM_PROVIDER=remote
+PROTEIN_DIFFDOCK_PROVIDER=auto
+PROTEIN_FOLD_PROVIDER=remote
+PROTEIN_MMSEQS_PROVIDER=local
+```
+
+| Value | Selection behavior |
+| :--- | :--- |
+| `auto` | Prefer a ready local provider; otherwise select a ready hosted provider |
+| `local` | Use only the local provider |
+| `remote` | Use only the hosted provider |
+
+Selection happens before inference; `auto` does not retry a failed local job remotely. Restart the backend after changing configuration, then inspect `/api/health` for readiness and missing requirements.
+
+<details>
+<summary><strong>Local setup: GenMol, DiffDock, and MMseqs2</strong></summary>
+
+Run these commands from the repository root. Model source, weights, and databases are acquired separately from the core web dependencies.
+
+**GenMol**
 
 ```bash
-# GenMol
-./scripts/setup-genmol.sh                 # 拉取源码
-cd backend && uv sync --group genmol      # torch cu128 等依赖
-# 权重放到 backend/checkpoints/model_v2.ckpt
+./scripts/setup-genmol.sh
+uv sync --directory backend --group genmol
+```
 
-# DiffDock
+Download the checkpoint using the sources printed by the setup script and place it at `backend/checkpoints/model_v2.ckpt`.
+
+**DiffDock**
+
+```bash
 ./scripts/setup-diffdock.sh
-cd backend && uv sync --group diffdock
-
-# MMseqs2（CPU）
-./scripts/setup-mmseqs.sh                 # 安装二进制
-./scripts/build-mmseqs-db.sh swissprot    # 下载并建库，约 300MB
+uv sync --directory backend --group diffdock
 ```
 
-## API 示例
+Follow the setup script's notes for matching PyTorch Geometric dependencies. The first inference may download additional model assets.
+
+When enabling both engines, include both groups in subsequent sync commands so their dependencies remain installed:
 
 ```bash
-# 提交
-curl -X POST localhost:8000/api/genmol/generate \
-     -H 'Content-Type: application/json' \
-     -d '{"mode":"denovo","num_samples":10}'
-# -> {"job_id":"a1b2c3d4e5f6","status":"queued"}
-
-# 轮询
-curl localhost:8000/api/jobs/a1b2c3d4e5f6
-
-# 下载结果
-curl -O localhost:8000/api/jobs/a1b2c3d4e5f6/files/molecules.smi
+uv sync --directory backend --group genmol --group diffdock
 ```
 
-| Endpoint | 功能 |
-|---|---|
-| `GET  /api/health` | 显卡与引擎状态 |
-| `POST /api/files` | 上传 PDB / SDF / FASTA |
-| `POST /api/genmol/generate` | 分子生成 |
-| `POST /api/molmim/optimize` | 分子优化 |
-| `POST /api/diffdock/dock` | 分子对接 |
-| `POST /api/mmseqs/search` | 序列搜索 |
-| `POST /api/fold/predict` | 结构预测 |
-| `GET  /api/jobs/{id}` | 任务状态 |
-| `GET  /api/jobs/{id}/files/{name}` | 下载结果 |
+**MMseqs2 — CPU sequence search**
 
-前端封装：
+The bundled binary installer targets Linux x86_64. With the installed binary on `PATH`, build a search database:
 
-```ts
-import { generateMolecules } from '$lib/api/client';
-
-const result = await generateMolecules(
-  { mode: 'denovo', num_samples: 10 },
-  (job) => (progress = job.progress)
-);
+```bash
+./scripts/setup-mmseqs.sh
+export PATH="$PWD/backend/third_party/bin:$PATH"
+./scripts/build-mmseqs-db.sh swissprot
 ```
 
-## 硬件说明
+Start the backend from a terminal with this `PATH`, or set `PROTEIN_MMSEQS_BINARY` to the binary's absolute path in `backend/.env`.
 
-开发环境：RTX 5070 Ti 16GB（Blackwell, sm_120）、64GB 内存。
+**GPU configuration**
 
-> ⚠️ **RTX 50 系（Blackwell）需要 PyTorch ≥ 2.7 + CUDA 12.8。**
-> 上游 GenMol 固定了 `torch==2.6.0`，在 50 系显卡上会报
-> `no kernel image is available for execution on the device`。
-> 本项目的依赖组已改为 `torch>=2.7` 并使用 cu128 源。
+The repository's GPU dependency groups use `torch>=2.7` from the CUDA 12.8 wheel index. The documented development machine has an RTX 5070 Ti with 16 GB VRAM and 64 GB RAM; memory requirements vary by engine and input. Jobs run one at a time by default (`PROTEIN_MAX_CONCURRENT_JOBS=1`).
 
-结构预测选用 ESMFold 而不是完整 AlphaFold2/OpenFold：后者的 MSA 数据库超过 2TB，不适合单卡环境。
+</details>
 
-## 第三方模型与许可证
+## Architecture
 
-本仓库**不分发**任何第三方代码或权重，由 `scripts/` 下的脚本在本地获取。详见 [NOTICE](NOTICE)。
+```mermaid
+flowchart TD
+    UI["Web interface · SvelteKit + Tailwind CSS"]
+    Viewer["Molecular viewer · Mol*"]
+    Client["API client · submit, poll, download"]
+    API["REST API · FastAPI"]
+    Jobs["Asynchronous job manager"]
+    Engines["Engine providers"]
+    Local["Local execution · GPU models / MMseqs2"]
+    Remote["Hosted inference · NVIDIA APIs"]
 
-| 项目 | 代码许可 | 权重许可 |
-|---|---|---|
-| [GenMol](https://github.com/NVIDIA-Digital-Bio/genmol) | Apache-2.0 | NVIDIA Open Model License |
-| [MolMIM](https://github.com/NVIDIA/bionemo-framework) | Apache-2.0 | NVIDIA AI Foundation Models Community License |
-| [DiffDock](https://github.com/gcorso/DiffDock) | MIT | MIT |
-| [MMseqs2](https://github.com/soedinglab/MMseqs2) | GPLv3 ⚠️ | — |
-| [ESMFold](https://github.com/facebookresearch/esm) | MIT | MIT |
-| [Mol*](https://github.com/molstar/molstar) | MIT | — |
-
-MMseqs2 是 GPLv3，本项目只通过子进程调用其命令行，不链接其代码。
-
-## 目录结构
-
+    UI --> Viewer
+    UI -. integration in progress .-> Client
+    Client --> API
+    API --> Jobs
+    Jobs --> Engines
+    Engines --> Local
+    Engines --> Remote
 ```
+
+GPU dependencies are loaded on demand, keeping the web service independent of local model installation. Each engine exposes its own readiness checks and returns results through the shared job interface.
+
+## Project structure
+
+```text
 protein-platform/
-├── backend/     FastAPI 后端（详见 backend/README.md）
-├── frontend/    SvelteKit 前端（详见 frontend/README.md）
-├── scripts/     第三方源码 / 二进制 / 数据库的获取脚本
-└── docs/        模型背景资料
+├── backend/      FastAPI service, engine providers, and job management
+├── frontend/     SvelteKit interface, API client, and Mol* viewer
+├── scripts/      Model source, binary, and database setup
+└── docs/         Model background and reference material
 ```
 
-## 路线图
+See the [backend guide](backend/README.md) and [frontend guide](frontend/README.md) for implementation details. These guides are currently in Chinese.
 
-- [x] 后端框架：异步任务、双 provider 引擎、GPU 探测、文件上传
-- [x] 五个引擎的 local / remote 实现或接口
-- [x] 前端 API 客户端
-- [ ] 前端各页面接入真实后端，移除 mock 数据
-- [ ] ESMFold 本地实现
-- [ ] 用户认证与任务历史
+## Roadmap
 
-## 贡献
+- [x] Asynchronous job API, file uploads, and engine diagnostics
+- [x] Local and hosted providers for GenMol and DiffDock
+- [x] Hosted MolMIM provider and local MMseqs2 search
+- [x] Mol* viewer and shared TypeScript API client
+- [ ] Connect inference pages to the backend and replace sample data
+- [ ] Integrate AlphaFold 2 for structure prediction
+- [ ] Implement local MolMIM optimization
+- [ ] Add user authentication and persistent job history
 
-见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+## Contributing
 
-## 许可证
+Contributions are welcome, including engine integrations, frontend work, documentation, and bug fixes. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions and checks (currently in Chinese).
 
-[Apache-2.0](LICENSE)
+When reporting an engine issue, include the relevant `/api/health` output, reproduction steps, and error message.
+
+## License and acknowledgments
+
+Protein Platform is licensed under [Apache 2.0](LICENSE).
+
+Built with [GenMol](https://github.com/NVIDIA-Digital-Bio/genmol), [MolMIM](https://github.com/NVIDIA/bionemo-framework), [DiffDock](https://github.com/gcorso/DiffDock), [MMseqs2](https://github.com/soedinglab/MMseqs2), and [Mol*](https://github.com/molstar/molstar).
+
+Third-party model code, weights, and hosted services retain their respective licenses and terms. Setup scripts fetch external model assets locally; see [NOTICE](NOTICE) for attribution and licensing details.
